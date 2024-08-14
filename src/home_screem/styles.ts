@@ -20,7 +20,9 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   currentMove: {
-    color: 'blue',
+    backgroundColor: 'blue',
+    padding: 10,
+    borderRadius: 30,
   },
   gameHeading: {
     fontSize: 28,
@@ -50,6 +52,7 @@ const styles = StyleSheet.create({
   },
   waitingText: {
     fontSize: 24,
+    color: 'white',
   },
   resetButton: {
     backgroundColor: 'red',

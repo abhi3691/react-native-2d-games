@@ -124,7 +124,7 @@ const App = () => {
             if (text) {
               setPlayerName(text);
               const newSocket = io(
-                'hhttps://xox-multiplayer-backend.onrender.com',
+                'https://xox-multiplayer-backend.onrender.com',
                 {
                   autoConnect: true,
                 },
@@ -169,21 +169,15 @@ const App = () => {
 
   return (
     <View style={styles.container}>
+      <Text style={[styles.playerName]}>
+        {currentPlayer === playingAs ? 'Your Tourn' : 'Oppoent Turn'}
+      </Text>
       <View style={styles.moveDetection}>
-        <Text
-          style={[
-            styles.playerName,
-            currentPlayer === playingAs ? styles.currentMove : {},
-          ]}>
-          You ({playerName})
-        </Text>
-        <Text
-          style={[
-            styles.playerName,
-            currentPlayer !== playingAs ? styles.currentMove : {},
-          ]}>
-          Oponent ({opponentName})
-        </Text>
+        <View style={playingAs ? styles.currentMove : {}}>
+          <Text style={[styles.playerName]}>
+            {playerName} ({playingAs === 'circle' ? 'O' : 'X'})
+          </Text>
+        </View>
       </View>
       <Text style={styles.gameHeading}>Tic Tac Toe</Text>
       {loading ? (
