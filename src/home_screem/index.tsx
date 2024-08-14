@@ -1,193 +1,230 @@
-import React, {useState, useEffect, useCallback} from 'react';
-import {View, Text, Button, Alert, ActivityIndicator} from 'react-native';
-import io from 'socket.io-client';
-
-import styles from './styles';
+import React, {useState, useEffect} from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import {io, Socket} from 'socket.io-client';
 import {checkWinner} from '../functions/checkWinner';
-import Animated, {ZoomIn} from 'react-native-reanimated';
-import RoomInput from '../components/RenderInput/RoomInput';
-import RenderCell from '../components/RenderCell/RenderCell';
+import styles from './styles';
+import Square from '../components/RenderCell/RenderCell';
 
-const socket = io('http://192.168.1.14:3000'); // Replace with your server IP
+const renderFrom = [
+  [1, 2, 3],
+  [4, 5, 6],
+  [7, 8, 9],
+];
 
-const HomeScreen = () => {
-  const [board, setBoard] = useState<string[]>(Array(9).fill(''));
-  const [currentPlayer, setCurrentPlayer] = useState<string | null>(null);
-  const [player, setPlayer] = useState<string | null>(null);
-  const [winner, setWinner] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [roomId, setRoomId] = useState<string>('');
-  const [inRoom, setInRoom] = useState<boolean>(false);
-  const [resetRequested, setResetRequested] = useState<boolean>(false);
+const App = () => {
+  const [gameState, setGameState] = useState([...renderFrom]);
+  const [currentPlayer, setCurrentPlayer] = useState('circle');
+  const [finishedState, setFinishedState] = useState<string | boolean>(false);
+  const [finishedArrayState, setFinishedArrayState] = useState<number[]>([]);
+  const [playOnline, setPlayOnline] = useState(false);
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [playerName, setPlayerName] = useState('');
+  const [opponentName, setOpponentName] = useState<string | null>(null);
+  const [playingAs, setPlayingAs] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    socket.on('gameState', state => {
-      setLoading(false);
-      setBoard(state.board);
-      setCurrentPlayer(state.currentPlayer);
-      if (state.currentPlayer !== socket.id) {
-        setPlayer(state?.playerSymbol);
-      }
-      const currentWinner = checkWinner(state.board);
-      setWinner(currentWinner);
-    });
-
-    socket.on('resetRequest', () => {
-      setResetRequested(true);
-      Alert.alert(
-        'Reset Request',
-        'Opponent wants to reset the game. Do you accept?',
-        [
-          {
-            text: 'Cancel',
-            onPress: () => {
-              socket.emit('resetDeny', roomId);
-              setResetRequested(false);
-            },
-          },
-          {
-            text: 'Accept',
-            onPress: () => {
-              socket.emit('resetConfirm', roomId);
-              setResetRequested(false);
-            },
-          },
-        ],
-      );
-    });
-
-    socket.on('playerDisconnected', playerId => {
-      if (playerId !== socket.id) {
-        handleDisconnect();
-      }
-    });
-    socket.on('playerJoined', ({id, symbol}) => {
-      if (id !== socket.id) {
-        setPlayer(symbol === 'X' ? 'O' : 'X');
-      }
-    });
-
-    socket.on('isConfirmed', () => {
-      setLoading(true);
-    });
-
-    return () => {
-      socket.off('gameState');
-      socket.off('resetRequest');
-      socket.off('isConfirmed');
-      socket.off('playerDisconnected');
-    };
-  }, [roomId]);
-
-  const joinRoom = () => {
-    if (roomId.trim()) {
-      socket.emit('joinRoom', roomId);
-      setInRoom(true);
-    } else {
-      Alert.alert('Error', 'Please enter a valid room ID');
+    const winner = checkWinner({gameState, setFinishedArrayState});
+    if (winner) {
+      setFinishedState(winner);
     }
-  };
+  }, [gameState]);
 
-  const leaveRoom = () => {
-    if (roomId.trim()) {
-      socket.emit('leaveRoom', roomId);
-      setInRoom(false);
-    } else {
-      Alert.alert('Error', 'Please enter a valid room ID');
+  useEffect(() => {
+    if (socket) {
+      socket.on('opponentLeftMatch', () => {
+        setFinishedState('opponentLeftMatch');
+      });
+
+      socket.on('playerMoveFromServer', data => {
+        const id = data.state.id;
+        setGameState(prevState => {
+          let newState = [...prevState];
+          const rowIndex = Math.floor(id / 3);
+          const colIndex = id % 3;
+          newState[rowIndex][colIndex] = data.state.sign;
+          return newState;
+        });
+        setCurrentPlayer(data.state.sign === 'circle' ? 'cross' : 'circle');
+      });
+
+      socket.on('requestReset', () => {
+        Alert.alert(
+          'Reset Request',
+          'Your opponent requested a game reset. Do you accept?',
+          [
+            {
+              text: 'Accept',
+              onPress: () => {
+                socket.emit('resetGameAccepted');
+              },
+            },
+            {
+              text: 'Decline',
+              onPress: () => {
+                socket.emit('resetGameDeclined');
+              },
+              style: 'cancel',
+            },
+          ],
+        );
+      });
+
+      socket.on('resetGame', () => {
+        resetGame();
+      });
+
+      socket.on('resetGameDeclined', () => {
+        Alert.alert(
+          'Reset Request',
+          'Reset request declined by your opponent.',
+        );
+      });
+
+      socket.on('connect', () => {
+        setPlayOnline(true);
+      });
+
+      socket.on('OpponentNotFound', () => {
+        setOpponentName(null);
+      });
+
+      socket.on('OpponentFound', data => {
+        setPlayingAs(data.playingAs);
+        setOpponentName(data.opponentName);
+      });
     }
-  };
+  }, [socket]);
 
-  const handleReset = () => {
-    socket.emit('resetRequest', roomId);
+  const resetGame = () => {
+    setLoading(true);
+    setFinishedArrayState([]);
+    setGameState([
+      [1, 2, 3],
+      [4, 5, 6],
+      [7, 8, 9],
+    ]);
+    setFinishedState(false);
+    setLoading(false);
   };
-
-  const handleDisconnect = () => {
-    Alert.alert(
-      'Opponent Disconnected',
-      'The opponent has disconnected. Join a new room or continue in the current room?',
+  const takePlayerName = () => {
+    Alert.prompt(
+      'Enter your name',
+      '',
       [
-        {text: 'Continue', style: 'destructive', onPress: () => {}},
         {
-          text: 'Join New',
-          onPress: () => {
-            setInRoom(false);
-            setBoard(Array(9).fill(''));
-            setCurrentPlayer(null);
-            setPlayer(null);
-            setWinner(null);
+          text: 'OK',
+          onPress: text => {
+            if (text) {
+              setPlayerName(text);
+              const newSocket = io('http://localhost:3000', {
+                autoConnect: true,
+              });
+
+              newSocket.emit('request_to_play', {
+                playerName: text,
+              });
+
+              setSocket(newSocket);
+            }
           },
         },
       ],
+      'plain-text',
     );
   };
 
-  const onChangeRoomId = useCallback((value: string) => {
-    setRoomId(value);
-  }, []);
+  const requestResetGame = () => {
+    if (socket) {
+      socket.emit('requestResetGame');
+    }
+  };
+
+  if (!playOnline) {
+    return (
+      <View style={styles.container}>
+        <TouchableOpacity onPress={takePlayerName} style={styles.playOnline}>
+          <Text style={styles.playOnlineText}>Play Online</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (playOnline && !opponentName) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.waitingText}>Waiting for opponent...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      {!inRoom ? (
-        <RoomInput
-          roomId={roomId}
-          onChangeRoomId={onChangeRoomId}
-          joinRoom={joinRoom}
-        />
+      <View style={styles.moveDetection}>
+        <Text
+          style={[
+            styles.playerName,
+            currentPlayer === playingAs ? styles.currentMove : {},
+          ]}>
+          You ({playerName})
+        </Text>
+        <Text
+          style={[
+            styles.playerName,
+            currentPlayer !== playingAs ? styles.currentMove : {},
+          ]}>
+          Oponent ({opponentName})
+        </Text>
+      </View>
+      <Text style={styles.gameHeading}>Tic Tac Toe</Text>
+      {loading ? (
+        <ActivityIndicator color={'white'} size={'large'} />
       ) : (
-        <>
-          {winner ? (
-            <Animated.View
-              entering={ZoomIn.duration(500)}
-              style={styles.container}>
-              <Text style={styles.winnText}>{winner}</Text>
-              <Text style={styles.winnerText}>
-                {winner === 'X' || winner === 'O' ? 'WINNER!' : 'DRAW!'}
-              </Text>
-            </Animated.View>
-          ) : (
-            <>
-              <Text style={styles.turnText}>
-                {player && `You are ${player}`}
-              </Text>
-              <Text style={styles.turnText}>
-                {currentPlayer === socket.id
-                  ? 'Your turn'
-                  : `Waiting for opponent (${player === 'X' ? 'O' : 'X'})`}
-              </Text>
-              <View style={styles.board}>
-                {loading ? (
-                  <View style={styles.container}>
-                    <ActivityIndicator color={'black'} size={'large'} />
-                  </View>
-                ) : (
-                  board.map((_, index) => (
-                    <RenderCell
-                      key={index}
-                      index={index}
-                      board={board}
-                      winner={winner}
-                      socket={socket}
-                      roomId={roomId} // Pass roomId to RenderCell
-                      disabled={currentPlayer !== socket.id || winner !== null}
-                    />
-                  ))
-                )}
-              </View>
-            </>
+        <View style={styles.squareWrapper}>
+          {gameState.map((arr, rowIndex) =>
+            arr.map((e, colIndex) => (
+              <Square
+                socket={socket}
+                playingAs={playingAs}
+                gameState={gameState}
+                finishedArrayState={finishedArrayState}
+                finishedState={finishedState}
+                currentPlayer={currentPlayer}
+                setCurrentPlayer={setCurrentPlayer}
+                setGameState={setGameState}
+                id={rowIndex * 3 + colIndex}
+                key={rowIndex * 3 + colIndex}
+                currentElement={e}
+                setFinishedState={setFinishedState}
+              />
+            )),
           )}
-
-          <View style={styles.resetButton}>
-            <Button
-              title="Reset"
-              onPress={handleReset}
-              disabled={resetRequested}
-            />
-            <Button title="Leave Room" onPress={leaveRoom} />
-          </View>
-        </>
+        </View>
+      )}
+      {finishedState && (
+        <Text style={styles.finishedStateText}>
+          {finishedState === playingAs
+            ? 'You won the game'
+            : finishedState === 'draw'
+            ? "It's a Draw"
+            : finishedState === 'opponentLeftMatch'
+            ? 'You won the match, Opponent has left'
+            : `${finishedState} won the game`}
+        </Text>
+      )}
+      {finishedState && (
+        <TouchableOpacity onPress={requestResetGame} style={styles.resetButton}>
+          <Text style={styles.resetButtonText}>Request Game Reset</Text>
+        </TouchableOpacity>
       )}
     </View>
   );
 };
 
-export default HomeScreen;
+export default App;

@@ -1,17 +1,28 @@
 import {StyleSheet} from 'react-native';
 
 const styles = StyleSheet.create({
-  cell: {
-    width: '33%',
-    height: '33%',
+  square: {
+    width: '30%',
+    height: '30%',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: '#ffffff',
+    borderRadius: 10,
+    margin: 5,
   },
-  cellText: {
-    fontSize: 48,
-    fontWeight: 'bold',
+  icon: {
+    width: 50,
+    height: 50,
+  },
+  defaultSquare: {
+    backgroundColor: 'transparent',
+  },
+  greyBackground: {
+    backgroundColor: 'grey',
+  },
+  winningSquare: {
+    backgroundColor: 'green',
   },
 });
 export default styles;

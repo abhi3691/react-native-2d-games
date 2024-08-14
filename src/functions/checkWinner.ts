@@ -1,28 +1,54 @@
-export const checkWinner = (board: string[]): string | null => {
-  const winningCombinations = [
-    [0, 1, 2],
-    [3, 4, 5],
-    [6, 7, 8],
-    [0, 3, 6],
-    [1, 4, 7],
-    [2, 5, 8],
-    [0, 4, 8],
-    [2, 4, 6],
-  ];
+interface checkProps {
+  gameState: any;
+  setFinishedArrayState: (value: any[]) => void;
+}
 
-  // Check for a winner
-  for (const [a, b, c] of winningCombinations) {
-    if (board[a] && board[a] === board[b] && board[a] === board[c]) {
-      return board[a]; // Return the winning symbol
+export const checkWinner = ({gameState, setFinishedArrayState}: checkProps) => {
+  // row dynamic
+  for (let row = 0; row < gameState.length; row++) {
+    if (
+      gameState[row][0] === gameState[row][1] &&
+      gameState[row][1] === gameState[row][2]
+    ) {
+      setFinishedArrayState([row * 3 + 0, row * 3 + 1, row * 3 + 2]);
+      return gameState[row][0];
     }
   }
 
-  // Check for a draw
-  const isDraw = board.every(cell => cell !== '');
-  if (isDraw) {
-    return 'X O'; // Return "Draw" if no empty cells are left
+  // column dynamic
+  for (let col = 0; col < gameState.length; col++) {
+    if (
+      gameState[0][col] === gameState[1][col] &&
+      gameState[1][col] === gameState[2][col]
+    ) {
+      setFinishedArrayState([0 * 3 + col, 1 * 3 + col, 2 * 3 + col]);
+      return gameState[0][col];
+    }
   }
 
-  // No winner and not a draw
+  if (
+    gameState[0][0] === gameState[1][1] &&
+    gameState[1][1] === gameState[2][2]
+  ) {
+    return gameState[0][0];
+  }
+
+  if (
+    gameState[0][2] === gameState[1][1] &&
+    gameState[1][1] === gameState[2][0]
+  ) {
+    return gameState[0][2];
+  }
+
+  const isDrawMatch = gameState.flat().every((e: any) => {
+    if (e === 'circle' || e === 'cross') {
+      return true;
+    }
+  });
+
+  if (isDrawMatch) {
+    return 'draw';
+  }
+
   return null;
 };
