@@ -51,7 +51,11 @@ const Square = ({
   const [icon, setIcon] = useState<React.ReactNode | null>(null);
 
   const clickOnSquare = () => {
-    if (playingAs !== currentPlayer || finishedState) {
+    if (
+      playingAs !== currentPlayer ||
+      finishedState ||
+      currentElement !== null
+    ) {
       return;
     }
 
