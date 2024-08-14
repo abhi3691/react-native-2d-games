@@ -123,9 +123,12 @@ const App = () => {
           onPress: text => {
             if (text) {
               setPlayerName(text);
-              const newSocket = io('http://localhost:3000', {
-                autoConnect: true,
-              });
+              const newSocket = io(
+                'hhttps://xox-multiplayer-backend.onrender.com',
+                {
+                  autoConnect: true,
+                },
+              );
 
               newSocket.emit('request_to_play', {
                 playerName: text,
