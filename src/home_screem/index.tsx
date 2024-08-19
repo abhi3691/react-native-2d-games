@@ -1,15 +1,10 @@
 import React, {useState, useEffect} from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import {View, Text, TouchableOpacity, ActivityIndicator} from 'react-native';
 import {io, Socket} from 'socket.io-client';
 import {checkWinner} from '../functions/checkWinner';
 import styles from './styles';
 import Square from '../components/RenderCell/RenderCell';
+import {useAlerts} from 'react-native-paper-alerts';
 
 const renderFrom = [
   [1, 2, 3],
@@ -18,7 +13,7 @@ const renderFrom = [
 ];
 
 const App = () => {
-  const [gameState, setGameState] = useState([...renderFrom]);
+  const [gameState, setGameState] = useState<any>([...renderFrom]);
   const [currentPlayer, setCurrentPlayer] = useState('circle');
   const [finishedState, setFinishedState] = useState<string | boolean>(false);
   const [finishedArrayState, setFinishedArrayState] = useState<number[]>([]);
@@ -26,8 +21,9 @@ const App = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [playerName, setPlayerName] = useState('');
   const [opponentName, setOpponentName] = useState<string | null>(null);
-  const [playingAs, setPlayingAs] = useState<string | null>(null);
+  const [playingAs, setPlayingAs] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const alerts = useAlerts();
 
   useEffect(() => {
     const winner = checkWinner({gameState, setFinishedArrayState});
@@ -44,7 +40,7 @@ const App = () => {
 
       socket.on('playerMoveFromServer', data => {
         const id = data.state.id;
-        setGameState(prevState => {
+        setGameState((prevState: any) => {
           let newState = [...prevState];
           const rowIndex = Math.floor(id / 3);
           const colIndex = id % 3;
@@ -55,7 +51,7 @@ const App = () => {
       });
 
       socket.on('requestReset', () => {
-        Alert.alert(
+        alerts.alert(
           'Reset Request',
           'Your opponent requested a game reset. Do you accept?',
           [
@@ -81,7 +77,7 @@ const App = () => {
       });
 
       socket.on('resetGameDeclined', () => {
-        Alert.alert(
+        alerts.alert(
           'Reset Request',
           'Reset request declined by your opponent.',
         );
@@ -100,7 +96,7 @@ const App = () => {
         setOpponentName(data.opponentName);
       });
     }
-  }, [socket]);
+  }, [socket, alerts]);
 
   const resetGame = () => {
     setLoading(true);
@@ -114,7 +110,7 @@ const App = () => {
     setLoading(false);
   };
   const takePlayerName = () => {
-    Alert.prompt(
+    alerts.prompt(
       'Enter your name',
       '',
       [
@@ -184,12 +180,11 @@ const App = () => {
         <ActivityIndicator color={'white'} size={'large'} />
       ) : (
         <View style={styles.squareWrapper}>
-          {gameState.map((arr, rowIndex) =>
+          {gameState.map((arr: number[], rowIndex: number) =>
             arr.map((e, colIndex) => (
               <Square
                 socket={socket}
                 playingAs={playingAs}
-                gameState={gameState}
                 finishedArrayState={finishedArrayState}
                 finishedState={finishedState}
                 currentPlayer={currentPlayer}
@@ -198,7 +193,6 @@ const App = () => {
                 id={rowIndex * 3 + colIndex}
                 key={rowIndex * 3 + colIndex}
                 currentElement={e}
-                setFinishedState={setFinishedState}
               />
             )),
           )}
