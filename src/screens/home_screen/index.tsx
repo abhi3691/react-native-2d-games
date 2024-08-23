@@ -14,8 +14,8 @@ const HomeScreen = () => {
       screen: 'Sudoku',
     },
     {
-      name: 'Carams',
-      screen: 'Carams',
+      name: 'Carrom',
+      screen: 'Carrom',
     },
   ];
   return (

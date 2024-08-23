@@ -4,6 +4,7 @@ import TicTac from '../screens/tic_tac';
 import SudokuGame from '../screens/sudoku';
 import {createNativeStackNavigator} from '@react-navigation/native-stack';
 import HomeScreen from '../screens/home_screen';
+import Carrom from '../screens/carrom';
 const Stack = createNativeStackNavigator();
 
 const Route = () => {
@@ -13,6 +14,7 @@ const Route = () => {
         <Stack.Screen name="HomeScreen" component={HomeScreen} />
         <Stack.Screen name="TicTic" component={TicTac} />
         <Stack.Screen name="Sudoku" component={SudokuGame} />
+        <Stack.Screen name="Carrom" component={Carrom} />
       </Stack.Navigator>
     </NavigationContainer>
   );
