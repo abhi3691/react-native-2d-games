@@ -1,9 +1,9 @@
 import React, {useState, useEffect} from 'react';
 import {View, Text, TouchableOpacity, ActivityIndicator} from 'react-native';
 import {io, Socket} from 'socket.io-client';
-import {checkWinner} from '../functions/checkWinner';
+import {checkWinner} from './functions/checkWinner';
 import styles from './styles';
-import Square from '../components/RenderCell/RenderCell';
+import Square from './molecules/RenderCell/RenderCell';
 import {useAlerts} from 'react-native-paper-alerts';
 
 const renderFrom = [
@@ -12,7 +12,7 @@ const renderFrom = [
   [7, 8, 9],
 ];
 
-const App = () => {
+const TicTac = () => {
   const [gameState, setGameState] = useState<any>([...renderFrom]);
   const [currentPlayer, setCurrentPlayer] = useState('circle');
   const [finishedState, setFinishedState] = useState<string | boolean>(false);
@@ -149,7 +149,7 @@ const App = () => {
     return (
       <View style={styles.container}>
         <TouchableOpacity onPress={takePlayerName} style={styles.playOnline}>
-          <Text style={styles.playOnlineText}>Play Online</Text>
+          <Text style={styles.playOnlineText}>Play Tic Tac Online</Text>
         </TouchableOpacity>
       </View>
     );
@@ -218,4 +218,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default TicTac;
