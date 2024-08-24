@@ -7,10 +7,12 @@ import {
   SafeAreaProvider,
 } from 'react-native-safe-area-context';
 import Route from './src/routes';
+import {StatusBar} from 'react-native';
 
 const App = () => {
   return (
     <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+      <StatusBar barStyle={'light-content'} backgroundColor={'black'} />
       <PaperProvider theme={DefaultTheme}>
         <AlertsProvider>
           <Route />

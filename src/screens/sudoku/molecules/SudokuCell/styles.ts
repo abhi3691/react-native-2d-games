@@ -10,7 +10,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   cellInput: {
-    fontSize: 18,
+    fontSize: 16,
     textAlign: 'center',
     width: '100%',
     height: '100%',

@@ -17,6 +17,10 @@ const HomeScreen = () => {
       name: 'Carrom',
       screen: 'Carrom',
     },
+    {
+      name: 'Chess',
+      screen: 'Chess',
+    },
   ];
   return (
     <SafeAreaView style={styles.container}>
