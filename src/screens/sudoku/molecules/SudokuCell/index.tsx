@@ -3,6 +3,7 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
+  ZoomIn,
 } from 'react-native-reanimated';
 import styles from './styles';
 import {TextInput} from 'react-native';
@@ -24,28 +25,16 @@ const SudokuCell: React.FC<SudokuCellProps> = ({
   onChange,
   isIncorrect,
 }) => {
-  const scale = useSharedValue(1);
-
   const handleChange = (text: string) => {
-    scale.value = withTiming(1.1, {duration: 100}, () => {
-      scale.value = withTiming(1);
-    });
     onChange(text);
   };
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{scale: scale.value}],
-  }));
 
   // Determine the background color based on the 3x3 subgrid position
   const isGray = Math.floor(row / 3) % 2 === Math.floor(col / 3) % 2;
   return (
     <Animated.View
-      style={[
-        styles.cell,
-        animatedStyle,
-        isGray ? styles.grayCell : styles.whiteCell,
-      ]}>
+      style={[styles.cell, isGray ? styles.grayCell : styles.whiteCell]}
+      entering={ZoomIn.duration(500).delay(300 * row)}>
       <TextInput
         style={[
           styles.cellInput,

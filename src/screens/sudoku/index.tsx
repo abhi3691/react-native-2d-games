@@ -7,6 +7,7 @@ import {
 import SudokuCell from './molecules/SudokuCell';
 import styles from './styles';
 import {Button, Menu} from 'react-native-paper';
+import Animated, {ZoomIn} from 'react-native-reanimated';
 
 const SudokuGame = () => {
   const [playerGrid, setPlayerGrid] = useState<string[][]>();
@@ -133,7 +134,10 @@ const SudokuGame = () => {
       </View>
       <View style={styles.gridContainer}>
         {playerGrid?.map((row, rowIndex) => (
-          <View key={rowIndex} style={styles.row}>
+          <Animated.View
+            key={rowIndex}
+            style={styles.row}
+            entering={ZoomIn.delay(100 * rowIndex)}>
             {row.map((cell, colIndex) => (
               <SudokuCell
                 key={colIndex}
@@ -145,7 +149,7 @@ const SudokuGame = () => {
                 onChange={value => handleInputChange(value, rowIndex, colIndex)}
               />
             ))}
-          </View>
+          </Animated.View>
         ))}
       </View>
       <View style={styles.flexRow}>
