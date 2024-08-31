@@ -12,7 +12,6 @@ const SudokuGame = () => {
   const [playerGrid, setPlayerGrid] = useState<string[][]>();
   const [originalGrid, setOriginalGrid] = useState<number[][]>([]);
   const [solved, setSolved] = useState<number[][]>([]);
-  const [hintCount, setHintCount] = useState(0);
   const [incorrectCount, setIncorrectCount] = useState(0);
   const [incorrectCells, setIncorrectCells] = useState<boolean[][]>([]);
   const [visible, setVisible] = useState<boolean>(false);
@@ -34,7 +33,6 @@ const SudokuGame = () => {
       grid.map(row => row.map(cell => (cell === 0 ? '' : cell.toString()))),
     );
     setSolved(solution);
-    setHintCount(0);
     setIncorrectCount(0);
     setIncorrectCells(grid.map(row => row.map(() => false)));
   }, [mode]);
@@ -49,7 +47,6 @@ const SudokuGame = () => {
         row.map(cell => (cell === 0 ? '' : cell.toString())),
       ),
     );
-    setHintCount(0);
     setIncorrectCount(0);
     setIncorrectCells(originalGrid.map(row => row.map(() => false)));
   };
