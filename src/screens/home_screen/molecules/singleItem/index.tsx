@@ -1,4 +1,10 @@
-import {View, Text, TouchableHighlight} from 'react-native';
+import {
+  View,
+  Text,
+  TouchableHighlight,
+  TouchableNativeFeedback,
+  TouchableOpacity,
+} from 'react-native';
 import React, {FC} from 'react';
 import styles from './styles';
 import {
@@ -21,9 +27,9 @@ const SingleItem: FC<SingleItemProps> = ({item, index}) => {
     navigation.navigate(item.screen);
   };
   return (
-    <TouchableHighlight style={styles.container} onPress={() => goTOScreen()}>
+    <TouchableOpacity style={styles.container} onPress={() => goTOScreen()}>
       <Text>{item.name}</Text>
-    </TouchableHighlight>
+    </TouchableOpacity>
   );
 };
 

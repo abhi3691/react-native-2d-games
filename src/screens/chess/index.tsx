@@ -1,11 +1,12 @@
-import React, {useCallback, useRef, useState} from 'react';
-import {View, StyleSheet, Text, Image} from 'react-native';
+import React, {useCallback, useState} from 'react';
+import {View, Text, Alert} from 'react-native';
 import {Chess} from 'chess.js';
 
-import Background from './orgnization/Background';
-import Piece, {PIECES} from './orgnization/Piece';
+import Background from './organization/Background';
+import Piece from './organization/Piece';
 import styles from './styles';
 import {useConst} from './functions/useConst';
+import CapturedPiecesComp from './organization/capturedPieces';
 
 const Board = () => {
   const chess = useConst(() => new Chess());
@@ -16,103 +17,112 @@ const Board = () => {
       w: [] as Array<{color: string; type: string}>,
       b: [] as Array<{color: string; type: string}>,
     },
+    selectedPiece: null as {x: number; y: number} | null,
+    possibleMoves: [] as Array<{x: number; y: number}>,
   });
+
+  const onPiecePress = useCallback(
+    (x: number, y: number) => {
+      const piece = state.board[y][x];
+      if (piece && piece.color === state.player) {
+        const possibleMoves = chess
+          .moves({
+            square: `${'abcdefgh'[x]}${8 - y}`,
+            verbose: true,
+          })
+          .map(move => ({
+            x: 'abcdefgh'.indexOf(move.to[0]),
+            y: 8 - parseInt(move.to[1], 10),
+          }));
+        setState(prev => ({
+          ...prev,
+          selectedPiece: {x, y},
+          possibleMoves,
+        }));
+      } else {
+        setState(prev => ({
+          ...prev,
+          selectedPiece: null,
+          possibleMoves: [],
+        }));
+      }
+    },
+    [chess, state.board, state.player],
+  );
 
   const onTurn = useCallback(() => {
     const moves = chess.history({verbose: true});
     const lastMove = moves[moves.length - 1];
     const captured = lastMove?.captured;
 
-    if (captured) {
-      const capturedPieces = {
-        w:
-          chess.turn() === 'b'
-            ? [...state.capturedPieces.w, captured]
-            : state.capturedPieces.w,
-        b:
-          chess.turn() === 'w'
-            ? [...state.capturedPieces.b, captured]
-            : state.capturedPieces.b,
-      };
+    const capturedPieces = {
+      w:
+        chess.turn() === 'b'
+          ? [
+              ...state.capturedPieces.w,
+              ...(captured ? [{color: 'b', type: captured}] : []),
+            ]
+          : state.capturedPieces.w,
+      b:
+        chess.turn() === 'w'
+          ? [
+              ...state.capturedPieces.b,
+              ...(captured ? [{color: 'w', type: captured}] : []),
+            ]
+          : state.capturedPieces.b,
+    };
 
-      setState({
-        player: state.player === 'w' ? 'b' : 'w',
-        board: chess.board(),
-        capturedPieces: capturedPieces,
-      });
-    } else {
-      setState({
-        player: state.player === 'w' ? 'b' : 'w',
-        board: chess.board(),
-        capturedPieces: state.capturedPieces,
-      });
+    const updatedBoard = chess.board();
+
+    setState(prev => ({
+      player: prev.player === 'w' ? 'b' : 'w',
+      board: updatedBoard,
+      capturedPieces,
+      selectedPiece: null,
+      possibleMoves: [],
+    }));
+
+    if (chess.in_check()) {
+      Alert.alert(
+        'Check!',
+        `${chess.turn() === 'w' ? 'White' : 'Black'} is in check.`,
+      );
     }
-  }, [chess, state.player, state.capturedPieces]);
+  }, [chess, state.capturedPieces]);
 
   return (
     <View style={styles.container}>
       <Text style={styles.playerInfo}>
         It is now {state.player === 'w' ? 'White’s' : 'Black’s'} turn to move.
       </Text>
-      <View style={styles.capturedPiecesContainer}>
-        <Text style={styles.capturedPiecesText}>
-          {state.capturedPieces.b.map((piece, index) => {
-            const id2 = `w${piece}` as keyof typeof PIECES;
-            if (PIECES[id2]) {
-              return (
-                <Image
-                  key={`w-${index}`}
-                  source={PIECES[id2]}
-                  style={styles.pieces}
-                  resizeMode="contain"
-                />
-              );
-            }
-            return null;
-          })}
-        </Text>
-      </View>
+      <CapturedPiecesComp capturedPieces={state.capturedPieces} type="b" />
 
       <View style={styles.box}>
         <Background />
         <View style={styles.absolute}>
           {state.board.map((row, y) =>
             row.map((piece, x) => {
-              if (piece !== null) {
-                return (
-                  <Piece
-                    key={`${x}-${y}`}
-                    id={`${piece.color}${piece.type}` as const}
-                    startPosition={{x, y}}
-                    chess={chess}
-                    onTurn={onTurn}
-                    enabled={state.player === piece.color}
-                  />
-                );
-              }
-              return null;
+              const isHighlighted = state.possibleMoves.some(
+                move => move.x === x && move.y === y,
+              );
+              return (
+                <Piece
+                  key={`${x}-${y}`}
+                  id={`${piece?.color}${piece?.type}` as Piece}
+                  startPosition={{x, y}}
+                  chess={chess}
+                  onTurn={onTurn}
+                  onPress={() => onPiecePress(x, y)}
+                  enabled={state.player === piece?.color}
+                  isHighlighted={isHighlighted}
+                  possibleMoves={state.possibleMoves}
+                />
+              );
             }),
           )}
         </View>
       </View>
-      <View>
-        <Text style={styles.capturedPiecesText}>
-          {state.capturedPieces.w.map((piece, index) => {
-            const id = `b${piece}` as keyof typeof PIECES;
-            if (PIECES[id]) {
-              return (
-                <Image
-                  key={`b-${index}`}
-                  source={PIECES[id]}
-                  style={styles.pieces}
-                  resizeMode="contain"
-                />
-              );
-            }
-            return null;
-          })}
-        </Text>
-      </View>
+      <CapturedPiecesComp capturedPieces={state.capturedPieces} type="w" />
     </View>
   );
 };
